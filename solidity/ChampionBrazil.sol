@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.17;
 //Xinle Yang
 //small contract for people to bet on specific item.
 
@@ -21,6 +21,6 @@ contract ChampionBrazil {
         //1) send all money to address in the WorldcupFun
         if (!WorldcupFunContract.call.value(msg.value)()) revert(); 
         //2) record the sender address and betting information to WorldcupFun
-        WorldcupFunContract.ChampionBet(msg.sender, "Brazil", msg.value);
+        WorldcupFunContract.ChampionBet(msg.sender, msg.value, 51);
     }
 }
