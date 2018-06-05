@@ -15,12 +15,12 @@ contract ChampionBrazil {
 
     function() public payable {
         //TODO 
-        //Need to make sure this function call is not expensive
+        //Need to make sure this function call is not expensive`
         //0) setup WorldcupFunContract
         WorldcupFun WorldcupFunContract = WorldcupFun(WorldcupFunAddress);
         //1) send all money to address in the WorldcupFun
         if (!WorldcupFunContract.call.value(msg.value)()) revert(); 
         //2) record the sender address and betting information to WorldcupFun
-        WorldcupFunContract.ChampionBet(msg.sender, msg.value, 51);
+        WorldcupFunContract.ChampionBet(msg.sender, 51);
     }
 }
