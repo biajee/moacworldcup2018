@@ -93,7 +93,7 @@ contract WorldcupFun {
     // }
 
     function AddContributor(address contributor) public {
-        if (allContributorsMap[contributor]>0) {
+        if (allContributorsMap[contributor]==0) {
             allContributors.push(contributor);
         }
         allContributorsMap[contributor]++;
