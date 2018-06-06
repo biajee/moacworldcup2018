@@ -19,8 +19,8 @@ contract ChampionBrazil {
         //0) setup WorldcupFunContract
         WorldcupFun WorldcupFunContract = WorldcupFun(WorldcupFunAddress);
         //1) send all money to address in the WorldcupFun
-        if (!WorldcupFunContract.call.value(msg.value)()) revert(); 
+        if (!WorldcupFunAddress.call.value(msg.value)()) revert(); 
         //2) record the sender address and betting information to WorldcupFun
-        WorldcupFunContract.ChampionBet(msg.sender, 51);
+        WorldcupFunContract.ChampionBet(msg.sender, 51, msg.value);
     }
 }

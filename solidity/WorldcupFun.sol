@@ -55,36 +55,36 @@ contract WorldcupFun {
         return true;
     }
 
-    function ChampionBet(address sender, uint teamNumber) public payable returns (bool) {
+    function ChampionBet(address sender, uint256 teamNumber, uint256 amount) public payable returns (bool) {
         if (teams[teamNumber].teamNumber == 0) revert();
 
-        championJackpot += msg.value;
-        teams[teamNumber].totalContributions += msg.value;
-        teams[teamNumber].contributions[sender] += msg.value;
+        championJackpot += amount;
+        teams[teamNumber].totalContributions += amount;
+        teams[teamNumber].contributions[sender] += amount;
         AddContributor(sender);
     }
 
-    function SingleMatchBet(address sender, uint matchNumber, uint result) public payable returns (bool) {
+    function SingleMatchBet(address sender, uint256 matchNumber, uint256 result, uint256 amount) public payable returns (bool) {
         if (result == 0) {
             //away wins
-            matches[matchNumber].awayWinContributions[sender] += msg.value;
-            matches[matchNumber].totalAwayWinContributions += msg.value;
+            matches[matchNumber].awayWinContributions[sender] += amount;
+            matches[matchNumber].totalAwayWinContributions += amount;
             AddContributor(sender);
         } else if (result == 1) {
             //draw
-            matches[matchNumber].drawContributions[sender] += msg.value;
-            matches[matchNumber].totalDrawContributions += msg.value;
+            matches[matchNumber].drawContributions[sender] += amount;
+            matches[matchNumber].totalDrawContributions += amount;
             AddContributor(sender);
         } else if (result == 3) {
             //home wins
-            matches[matchNumber].homeWinContributions[sender] += msg.value;
-            matches[matchNumber].totalHomeWinContributions += msg.value;
+            matches[matchNumber].homeWinContributions[sender] += amount;
+            matches[matchNumber].totalHomeWinContributions += amount;
             AddContributor(sender);
         } else {
             revert();
         }
 
-        matches[matchNumber].jackpot += msg.value;
+        matches[matchNumber].jackpot += amount;
         return true;
     }
 
@@ -157,7 +157,7 @@ contract WorldcupFun {
                 contribution = matches[matchNumber].homeWinContributions[contributor];
                 if (contribution>0) {
                     dist = distJackpot * contribution / matches[matchNumber].totalHomeWinContributions;
-                    contributor.send(dist);
+                    contributor.call.value(dist);
                 }
             }
             matches[matchNumber].rewardSent = true;
@@ -167,7 +167,7 @@ contract WorldcupFun {
                 contribution = matches[matchNumber].drawContributions[contributor];
                 if (contribution>0) {
                     dist = distJackpot * contribution / matches[matchNumber].totalDrawContributions;
-                    contributor.send(dist);
+                    contributor.call.value(dist);
                 }
             }
             matches[matchNumber].rewardSent = true;
@@ -177,7 +177,7 @@ contract WorldcupFun {
                 contribution = matches[matchNumber].awayWinContributions[contributor];
                 if (contribution>0) {
                     dist = distJackpot * contribution / matches[matchNumber].totalAwayWinContributions;
-                    contributor.send(dist);
+                    contributor.call.value(dist);
                 }
             }
             matches[matchNumber].rewardSent = true;
@@ -202,14 +202,14 @@ contract WorldcupFun {
             contribution = teams[championNumber].contributions[contributor];
             if (contribution>0) {
                 dist = distJackpot * contribution / teams[championNumber].totalContributions;
-                contributor.send(dist);
+                contributor.call.value(dist);
             }
         }
         championRewardSent = true;
     }
 
     function () public payable {
-        if (!founder.call.value(msg.value)()) revert();
+        // if (!founder.call.value(msg.value)()) revert();
     }
 
     //TODO: more to add
