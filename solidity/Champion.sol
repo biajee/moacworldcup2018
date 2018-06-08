@@ -4,13 +4,13 @@ pragma solidity ^0.4.17;
 
 import "./WorldcupFun.sol";
 
-contract ChampionBrazil {
+contract Champion {
 
     address public WorldcupFunAddress;
     uint256 public TeamNumber;
 
     //constructor
-    function ChampionBrazil(address wf, uint256 teamNumber) public {
+    function Champion(address wf, uint256 teamNumber) public {
         WorldcupFunAddress = wf;
         TeamNumber = teamNumber;
     }
@@ -20,9 +20,7 @@ contract ChampionBrazil {
         //Need to make sure this function call is not expensive`
         //0) setup WorldcupFunContract
         WorldcupFun WorldcupFunContract = WorldcupFun(WorldcupFunAddress);
-        //1) send all money to address in the WorldcupFun
-        if (!WorldcupFunAddress.call.value(msg.value)()) revert(); 
-        //2) record the sender address and betting information to WorldcupFun
-        WorldcupFunContract.ChampionBet(msg.sender, TeamNumber, msg.value);
+        //1) send all money to WorldcupFun address, record the sender address and betting information to WorldcupFun
+        if (!WorldcupFunContract.ChampionBet.value(msg.value)(msg.sender, TeamNumber)) revert();
     }
 }

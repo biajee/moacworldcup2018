@@ -23,8 +23,6 @@ contract Match {
         //0) setup WorldcupFunContract
         WorldcupFun WorldcupFunContract = WorldcupFun(WorldcupFunAddress);
         //1) send all money to address in the WorldcupFun
-        if (!WorldcupFunAddress.call.value(msg.value)()) revert(); 
-        //2) record the sender address and betting information to WorldcupFun
-        WorldcupFunContract.SingleMatchBet(msg.sender, MatchNumber, Result, msg.value);
+        if (!WorldcupFunContract.SingleMatchBet.value(msg.value)(msg.sender, MatchNumber, Result)) revert();
     }
 }
