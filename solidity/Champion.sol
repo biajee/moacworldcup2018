@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.22;
 //Xinle Yang
 //small contract for people to bet on specific item.
 
@@ -9,8 +9,7 @@ contract Champion {
     address public WorldcupFunAddress;
     uint256 public TeamNumber;
 
-    //constructor
-    function Champion(address wf, uint256 teamNumber) public {
+    constructor(address wf, uint256 teamNumber) public {
         WorldcupFunAddress = wf;
         TeamNumber = teamNumber;
     }

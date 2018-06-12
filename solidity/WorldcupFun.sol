@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.22;
 //Xinle Yang
 //The full contract handling betting and rewarding.
 
@@ -7,7 +7,7 @@ contract WorldcupFun {
     address public founder;
 
     uint256 public tokenRatio = 10000;
-    string  public tokenSymbol = 'RUS18';
+    string  public tokenSymbol = "RUS18";
 
     uint256 public totalBonus           = 2000000;
     uint256 public accountBonusLimit    = 500000;
@@ -16,7 +16,7 @@ contract WorldcupFun {
     uint256 public unitAccountBonus     = 10;
     uint256 public unitEarlyBonus       = 1000;
 
-    uint256 public contributionLowerBound = 1000;
+    uint256 public contributionLowerBound = 10000;
     uint256 public contributionUpperBound = 1000000;
 
     struct Match {
@@ -67,8 +67,7 @@ contract WorldcupFun {
     
     uint256 championNumber;
 
-    //constructor
-    function WorldcupFun() public {
+    constructor() public {
         founder = msg.sender;
     }
 
@@ -82,7 +81,7 @@ contract WorldcupFun {
         if (allContributorsMap[contributor]==0) {
             allContributors.push(contributor);
         }
-        allContributorsMap[contributor] += msg.value * tokenRatio;
+        allContributorsMap[contributor] = 1;
     }
 
     function AddMatch(uint256 matchNumber, uint256 homeTeamNumber, uint256 awayTeamNumber, uint256 startTime) public returns (bool) {
@@ -149,74 +148,44 @@ contract WorldcupFun {
     function SingleMatchBet(address sender, uint256 matchNumber, uint256 result) public payable returns (bool) {
         if (msg.value < 1000000000000000000 * contributionLowerBound / tokenRatio) revert();
         if (msg.value > 1000000000000000000 * contributionUpperBound / tokenRatio) revert();
-        if (matches[matchNumber].startTime == 0) revert();
         if (matches[matchNumber].startTime < now + 600) revert();
 
-        if (result == 0) {
-            //away wins
+        uint256 totalContribution = 0;
+        if (result < 3 && result >= 0) {
             if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
                 contributorsAccountBonus[sender] = unitAccountBonus;
                 accountBonusLimit -= unitAccountBonus;
                 matches[matchNumber].jackpot += unitAccountBonus;
                 matchesContributions[sender][result + 3 * matchNumber] += unitAccountBonus;
-                matches[matchNumber].totalAwayWinContributions += unitAccountBonus;
+                totalContribution += unitAccountBonus;
             }
             if (earlyBonusLimit >= unitEarlyBonus && contributorsEarlyBonus[sender] == 0) {
                 contributorsEarlyBonus[sender] = unitEarlyBonus;
                 earlyBonusLimit -= unitEarlyBonus;
                 matches[matchNumber].jackpot += unitEarlyBonus;
                 matchesContributions[sender][result + 3 * matchNumber] += unitEarlyBonus;
-                matches[matchNumber].totalAwayWinContributions += unitEarlyBonus;
+                totalContribution += unitEarlyBonus;
             }
 
             matchesContributions[sender][result + 3 * matchNumber] += msg.value * tokenRatio;
-            matches[matchNumber].totalAwayWinContributions += msg.value * tokenRatio;
-            AddContributor(sender);
-        } else if (result == 1) {
-            //draw
-            if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
-                contributorsAccountBonus[sender] = unitAccountBonus;
-                accountBonusLimit -= unitAccountBonus;
-                matches[matchNumber].jackpot += unitAccountBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitAccountBonus;
-                matches[matchNumber].totalDrawContributions += unitAccountBonus;
-            }
-            if (earlyBonusLimit >= unitEarlyBonus && contributorsEarlyBonus[sender] == 0) {
-                contributorsEarlyBonus[sender] = unitEarlyBonus;
-                earlyBonusLimit -= unitEarlyBonus;
-                matches[matchNumber].jackpot += unitEarlyBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitEarlyBonus;
-                matches[matchNumber].totalDrawContributions += unitEarlyBonus;
-            }
-            
-            matchesContributions[sender][result + 3 * matchNumber] += msg.value * tokenRatio;
-            matches[matchNumber].totalDrawContributions += msg.value * tokenRatio;
-            AddContributor(sender);
-        } else if (result == 2) {
-            //home wins
-            if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
-                contributorsAccountBonus[sender] = unitAccountBonus;
-                accountBonusLimit -= unitAccountBonus;
-                matches[matchNumber].jackpot += unitAccountBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitAccountBonus;
-                matches[matchNumber].totalHomeWinContributions += unitAccountBonus;
-            }
-            if (earlyBonusLimit >= unitEarlyBonus && contributorsEarlyBonus[sender] == 0) {
-                contributorsEarlyBonus[sender] = unitEarlyBonus;
-                earlyBonusLimit -= unitEarlyBonus;
-                matches[matchNumber].jackpot += unitEarlyBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitEarlyBonus;
-                matches[matchNumber].totalHomeWinContributions += unitEarlyBonus;
-            }
-            
-            matchesContributions[sender][result + 3 * matchNumber] += msg.value * tokenRatio;
-            matches[matchNumber].totalHomeWinContributions += msg.value * tokenRatio;
+            totalContribution += msg.value * tokenRatio;
             AddContributor(sender);
         } else {
             revert();
         }
 
-        matches[matchNumber].jackpot += msg.value * tokenRatio;
+        if (result == 0) {
+            //away wins
+            matches[matchNumber].totalAwayWinContributions += totalContribution;
+        } else if (result == 1) {
+            //draw
+            matches[matchNumber].totalDrawContributions += totalContribution;
+        } else if (result == 2) {
+            //home wins
+            matches[matchNumber].totalHomeWinContributions += totalContribution;
+        }
+
+        matches[matchNumber].jackpot += totalContribution;
         return true;
     }
 
@@ -239,7 +208,6 @@ contract WorldcupFun {
         address contributor = 0x0;
         uint256 contribution = 0;
         uint256 dist = 0;
-        uint256 bonus = 0;
         if (matches[matchNumber].homeScore > matches[matchNumber].awayScore && matches[matchNumber].totalHomeWinContributions > 0) {
             for (i=0; i<contributorsLength; i++) {
                 contributor = allContributors[i];
@@ -247,11 +215,7 @@ contract WorldcupFun {
                 if (contribution>0) {
                     matchesContributionsSent[contributor][matchNumber * 3 + 2] += contribution;
                     dist = distJackpot * contribution / matches[matchNumber].totalHomeWinContributions / tokenRatio;
-                    bonus = allContributorsBonus[contributor] - allContributorsBonusSent[contributor];
-                    if (bonus > 0) {
-                        allContributorsBonusSent[contributor] = allContributorsBonus[contributor];
-                        dist += bonus / tokenRatio;
-                    }
+                    AddWinAmount(dist, contributor);
                     if (!contributor.send(dist)) {
                         revert();
                     }
@@ -265,11 +229,7 @@ contract WorldcupFun {
                 if (contribution>0) {
                     matchesContributionsSent[contributor][matchNumber * 3 + 1] += contribution;
                     dist = distJackpot * contribution / matches[matchNumber].totalDrawContributions / tokenRatio;
-                    bonus = allContributorsBonus[contributor] - allContributorsBonusSent[contributor];
-                    if (bonus > 0) {
-                        allContributorsBonusSent[contributor] = allContributorsBonus[contributor];
-                        dist += bonus / tokenRatio;
-                    }
+                    AddWinAmount(dist, contributor);
                     if (!contributor.send(dist)) {
                         revert();
                     }
@@ -283,11 +243,7 @@ contract WorldcupFun {
                 if (contribution>0) {
                     matchesContributionsSent[contributor][matchNumber * 3] += contribution;
                     dist = distJackpot * contribution / matches[matchNumber].totalAwayWinContributions / tokenRatio;
-                    bonus = allContributorsBonus[contributor] - allContributorsBonusSent[contributor];
-                    if (bonus > 0) {
-                        allContributorsBonusSent[contributor] = allContributorsBonus[contributor];
-                        dist += bonus / tokenRatio;
-                    }
+                    AddWinAmount(dist, contributor);
                     if (!contributor.send(dist)) {
                         revert();
                     }
@@ -310,24 +266,27 @@ contract WorldcupFun {
         address contributor = 0x0;
         uint256 contribution = 0;
         uint256 dist = 0;
-        uint256 bonus = 0;
         for (uint256 i=0; i<contributorsLength; i++) {
             contributor = allContributors[i];
             contribution = teamsContributions[contributor][championNumber] - teamsContributionsSent[contributor][championNumber];
             if (contribution>0) {
                 teamsContributionsSent[contributor][championNumber] += contribution;
                 dist = distJackpot * contribution / teams[championNumber].totalContributions / tokenRatio;
-                bonus = allContributorsBonus[contributor] - allContributorsBonusSent[contributor];
-                if (bonus > 0) {
-                    allContributorsBonusSent[contributor] = allContributorsBonus[contributor];
-                    dist += bonus / tokenRatio;
-                }
+                AddWinAmount(dist, contributor);
                 if (!contributor.send(dist)) {
                     revert();
                 }
             }
         }
         championRewardSent = true;
+    }
+
+    function AddWinAmount(uint256 amount, address winner) public {
+        if (allWinnersMap[winner]==0) {
+            allWinners.push(winner);
+        }
+        allWinnersMap[winner] += amount;
+
     }
 
     function SendoutTopBonus() public {
@@ -365,11 +324,11 @@ contract WorldcupFun {
     function SafetySendout(uint256 amount) public {
         if (msg.sender != founder) revert();
 
-        founder.send(amount);
+        founder.transfer(amount);
     }
 
     function () public payable {
-        founder.send(msg.value);
+        founder.transfer(msg.value);
     }
 
     //TODO: more to add

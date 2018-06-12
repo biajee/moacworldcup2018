@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.22;
 //Xinle Yang
 //small contract for people to bet on specific item.
 
@@ -10,8 +10,7 @@ contract Match {
     uint256 public MatchNumber;
     uint256 public Result;
 
-    //constructor
-    function Match(address wf, uint256 matchNumber, uint256 result) public {
+    constructor(address wf, uint256 matchNumber, uint256 result) public {
         WorldcupFunAddress = wf;
         MatchNumber = matchNumber;
         Result = result;
