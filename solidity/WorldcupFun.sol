@@ -6,18 +6,19 @@ contract WorldcupFun {
 
     address public founder;
 
+    uint256 public toShaRatio = 1000000000000000000;
     uint256 public tokenRatio = 10000;
-    string  public tokenSymbol = "RUS18";
+    string  public tokenSymbol = "WCT";
 
-    uint256 public totalBonus           = 2000000;
-    uint256 public accountBonusLimit    = 500000;
-    uint256 public earlyBonusLimit      = 500000;
-    uint256 public topBonusLimit        = 1000000;
-    uint256 public unitAccountBonus     = 10;
-    uint256 public unitEarlyBonus       = 1000;
+    uint256 public totalBonus           = 2000000 * toShaRatio;
+    uint256 public accountBonusLimit    = 500000 * toShaRatio;
+    uint256 public earlyBonusLimit      = 500000 * toShaRatio;
+    uint256 public topBonusLimit        = 1000000 * toShaRatio;
+    uint256 public unitAccountBonus     = 10 * toShaRatio;
+    uint256 public unitEarlyBonus       = 1000 * toShaRatio;
 
-    uint256 public contributionLowerBound = 10000;
-    uint256 public contributionUpperBound = 1000000;
+    uint256 public contributionLowerBound = 10000 * toShaRatio;
+    uint256 public contributionUpperBound = 1000000 * toShaRatio;
 
     struct Match {
         uint256 matchNumber;
@@ -119,8 +120,8 @@ contract WorldcupFun {
 
     function ChampionBet(address sender, uint256 teamNumber) public payable returns (bool) {
         if (teams[teamNumber].teamNumber == 0) revert();
-        if (msg.value < 1000000000000000000 * contributionLowerBound / tokenRatio) revert();
-        if (msg.value > 1000000000000000000 * contributionUpperBound / tokenRatio) revert();
+        if (msg.value < contributionLowerBound / tokenRatio) revert();
+        if (msg.value > contributionUpperBound / tokenRatio) revert();
         if (matches[57].startTime < now + 600) revert(); //before the first game of final 8
 
         if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
@@ -146,8 +147,8 @@ contract WorldcupFun {
     }
 
     function SingleMatchBet(address sender, uint256 matchNumber, uint256 result) public payable returns (bool) {
-        if (msg.value < 1000000000000000000 * contributionLowerBound / tokenRatio) revert();
-        if (msg.value > 1000000000000000000 * contributionUpperBound / tokenRatio) revert();
+        if (msg.value < contributionLowerBound / tokenRatio) revert();
+        if (msg.value > contributionUpperBound / tokenRatio) revert();
         if (matches[matchNumber].startTime < now + 600) revert();
 
         uint256 totalContribution = 0;
@@ -201,7 +202,7 @@ contract WorldcupFun {
         if (!matches[matchNumber].finished) revert();
         if (matches[matchNumber].rewardSent) revert();
 
-        uint256 distJackpot = matches[matchNumber].jackpot * 9 / 10;
+        uint256 distJackpot = matches[matchNumber].jackpot * 99 / 100;
 
         uint256 contributorsLength = allContributors.length;
         uint256 i = 0;
@@ -258,7 +259,7 @@ contract WorldcupFun {
         if (championRewardSent) revert();
         if (championNumber == 0) revert();
 
-        uint256 distJackpot = championJackpot * 9 / 10;
+        uint256 distJackpot = championJackpot * 99 / 100;
 
         uint256 contributorsLength = allContributors.length;
         if (teams[championNumber].totalContributions == 0) revert();
@@ -328,7 +329,6 @@ contract WorldcupFun {
     }
 
     function () public payable {
-        founder.transfer(msg.value);
     }
 
     //TODO: more to add

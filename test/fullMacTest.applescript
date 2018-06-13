@@ -7,7 +7,7 @@ set MatchSolFile to "Match.sol"
 set WorldcupFunSolFile to "WorldcupFun.sol"
 
 set runInit to false
-set initSteps to 1
+set initSteps to 2
 set runNpmInstall to true
 set runCompileSol to true
 set runMoac1 to true
@@ -72,7 +72,7 @@ tell application "iTerm"
 			tell current session of moac1Tab
 				write text "echo -ne \"\\033]0;\"moac 1\"\\007\""
 				write text "cd " & binFolder
-				write text "./moac --datadir \"" & binFolder & "/data\" --verbosity 4 --jspath " & jsFolder & " --rpc --rpccorsdomain \"http://wallet.moac.io\""
+				write text "./moac --datadir \"" & binFolder & "/data\" --verbosity 4 --networkid 77 --jspath " & jsFolder & " --rpc --rpccorsdomain \"http://wallet.moac.io\""
 			end tell
 			delay 5
 		end if
@@ -93,21 +93,44 @@ tell application "iTerm"
 				write text "loadContracts()"
 				delay 1
 				write text "createWorldcupFunContract()"
-				delay 13
-				write text "addTeam(51, \"Brazil\")"
+				delay 30
+				--write text "sendtx(mc.coinbase, wcAddress, 220, \"\")"
+				write text "addTeam(12, \"SaudiArabia\")"
 				write text "addTeam(11, \"Russia\")"
 				delay 13
+				write text "addMatch(1, 11, 12, 1529013600)"
+				write text "addMatch(57, 11, 12, 1538850800)"
+				delay 13
 				write text "createChampionContract(11, \"Russia\")"
-				write text "createChampionContract(51, \"Brazil\")"
+				delay 13
+				write text "createChampionContract(12, \"SaudiArabia\")"
+				delay 13
+				write text "createMatchContract(1, 0)"
+				delay 13
+				write text "createMatchContract(1, 1)"
+				delay 13
+				write text "createMatchContract(1, 2)"
 				delay 13
 				write text "supportTeam(11, 1)"
-				write text "supportTeam(51, 0.5)"
-				delay 13
-				write text "setChampion(51)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
+				write text "supportTeam(12, 3.5)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
+				write text "betMatch(1, 0, 2.5)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
+				write text "betMatch(1, 1, 1.5)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
+				write text "betMatch(1, 2, 3.5)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
+				write text "setChampion(11)"
 				delay 13
 				write text "distChampionBet()"
-				delay 13
-				write text "mc.getBalance(wcAddress)"
+				delay 20
+				write text "mc.getBalance(wcAddress)/toShaRatio"
 				
 			end tell
 			delay 1

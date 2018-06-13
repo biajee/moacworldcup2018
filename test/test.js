@@ -11,6 +11,8 @@ var cache = [
   '         '
 ];
 
+var toShaRatio = 1000000000000000000;
+
 function leftPad (str, len, ch) {
 	// convert `str` to `string`
 	str = str + '';
@@ -165,6 +167,27 @@ function addTeam(teamNumber, teamName) {
 	
 }
 
+function addMatch(matchNumber, homeTeamNumber, awayTeamNumber, startTime) {
+	var MyContract = chain3.mc.contract(wcAbi);
+	var contractInstance = MyContract.at(wcAddress);
+
+	contractInstance.AddMatch.sendTransaction(
+		matchNumber, 
+		homeTeamNumber,
+		awayTeamNumber,
+		startTime,
+		{
+			from: mc.coinbase,
+			gas: '5000000'
+		},
+		function (e,c) {
+			console.log(e, c);
+		}
+	);
+	
+}
+
+
 function createChampionContract(teamNumber, teamName) {
 	var championContract = chain3.mc.contract(championAbi);
 	var championInstance = championContract.new(
@@ -183,12 +206,37 @@ function createChampionContract(teamNumber, teamName) {
 	 })
 }
 
+function createMatchContract(matchNumber, result) {
+	var matchContract = chain3.mc.contract(matchAbi);
+	var matchInstance = matchContract.new(
+	   wcAddress,
+	   matchNumber,
+	   result,
+	   {
+	     from: mc.coinbase, 
+	     data: matchData, 
+	     gas: '4700000'
+	   }, function (e, contract){
+	    console.log(e, contract);
+	    if (typeof contract.address !== 'undefined') {
+	         console.log(matchNumber, result, 'Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+	         matchAddresses[''+matchNumber+'x'+result] = contract.address;
+	    }
+	 })
+}
+
 function supportTeam(teamNumber, amount) {
 	sendtx(mc.coinbase, championAddresses[''+teamNumber], amount, "", function(e, c) {
 		console.log(e,c);
 	})
 }
 
+
+function betMatch(matchNumber, result, amount) {
+	sendtx(mc.coinbase, matchAddresses[''+matchNumber +'x'+result], amount, "", function(e, c) {
+		console.log(e,c);
+	})
+}
 
 function setChampion(teamNumber) {
 	var MyContract = chain3.mc.contract(wcAbi);
@@ -228,6 +276,14 @@ function getTeamInfo(teamNumber) {
 	var contractInstance = MyContract.at(wcAddress);
 
 	var result = contractInstance.teams(teamNumber);
+	console.log(result);
+}
+
+function getMatchInfo(matchNumber) {
+	var MyContract = chain3.mc.contract(wcAbi);
+	var contractInstance = MyContract.at(wcAddress);
+
+	var result = contractInstance.matches(matchNumber, 0);
 	console.log(result);
 }
 
