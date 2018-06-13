@@ -87,8 +87,6 @@ contract WorldcupFun {
 
     function AddMatch(uint256 matchNumber, uint256 homeTeamNumber, uint256 awayTeamNumber, uint256 startTime) public returns (bool) {
         if (msg.sender != founder) revert();
-        if (teams[homeTeamNumber].teamNumber == 0) revert();
-        if (teams[awayTeamNumber].teamNumber == 0) revert();
 
         matches[matchNumber].matchNumber    = matchNumber;
         matches[matchNumber].homeTeamNumber = homeTeamNumber;
