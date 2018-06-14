@@ -107,6 +107,11 @@ var matchAbi;
 var matchData = '';
 var matchAddresses = {};
 
+var account1 = '';
+var account2 = '';
+var account3 = '';
+var account4 = '';
+
 function loadContracts() {
 	var contractName = 'WorldcupFun';
 	loadScript(contractName + '.abi');
@@ -133,13 +138,14 @@ function loadContracts() {
 	console.log("output", matchData);
 }
 
-function createWorldcupFunContract() {
+function createWorldcupFunContract(from) {
 	var worldcupfunContract = chain3.mc.contract(wcAbi);
 	var worldcupfun = worldcupfunContract.new(
 	   {
-	     from: mc.coinbase, 
+	     from: from, 
 	     data: wcData, 
-	     gas: '4700000'
+	     gas: '4700000',
+	     gasPrice: chain3.mc.gasPrice*2
 	   }, function (e, contract){
 	    console.log(e, contract);
 	    if (typeof contract.address !== 'undefined') {
@@ -223,6 +229,21 @@ function createMatchContract(matchNumber, result) {
 	         matchAddresses[''+matchNumber+'x'+result] = contract.address;
 	    }
 	 });
+}
+
+function getMatchContract(address) {
+	var MyContract = chain3.mc.contract(matchAbi);
+	var contractInstance = MyContract.at(address);
+
+	var worldcupFunAddress = contractInstance.WorldcupFunAddress();
+	// console.log("WorldcupFunAddress", worldcupFunAddress);
+	var matchNumber = contractInstance.MatchNumber();
+	// console.log("MatchNumber", matchNumber);
+	var result = contractInstance.Result();
+	// console.log("Result", result);
+	matchAddresses[''+matchNumber+'x'+result] = address;
+	console.log(matchNumber+'x'+result, address);
+
 }
 
 function supportTeam(teamNumber, amount) {
@@ -466,7 +487,7 @@ function getMatchInfo(matchNumber) {
 	var MyContract = chain3.mc.contract(wcAbi);
 	var contractInstance = MyContract.at(wcAddress);
 
-	var result = contractInstance.matches(matchNumber, 0);
+	var result = contractInstance.matches(matchNumber);
 	console.log(result);
 }
 
@@ -478,4 +499,106 @@ function getTeamContributionInfo(teamNumber) {
 	console.log(result);
 }
 
+function safetySendout(amount) {
+	var MyContract = chain3.mc.contract(wcAbi);
+	var contractInstance = MyContract.at(wcAddress);
+
+	contractInstance.SafetySendout.sendTransaction(
+		amount,
+		{
+			from: mc.coinbase,
+			gas: '5000000'
+		},
+		function (e,c) {
+			console.log(e, c);
+		}
+	);
+	
+}
+
+
+function getTransactionsByAccount(myaccount, startBlockNumber, endBlockNumber) {
+  if (endBlockNumber == null) {
+    endBlockNumber = mc.blockNumber;
+    console.log("Using endBlockNumber: " + endBlockNumber);
+  }
+  if (startBlockNumber == null) {
+    startBlockNumber = endBlockNumber - 1000;
+    console.log("Using startBlockNumber: " + startBlockNumber);
+  }
+  console.log("Searching for transactions to/from account \"" + myaccount + "\" within blocks "  + startBlockNumber + " and " + endBlockNumber);
+
+  var count = 0;
+
+  for (var i = startBlockNumber; i <= endBlockNumber; i++) {
+    if (i % 1000 == 0) {
+      // console.log("Searching block " + i);
+    }
+    var block = mc.getBlock(i, true);
+    if (block != null && block.transactions != null) {
+      if (block.miner == myaccount) {
+        count++;
+        // console.log("block miner", i, block.miner, count);
+      }
+      block.transactions.forEach( function(e) {
+      	if (myaccount == e.from) {
+      		var hash = e.hash;
+      		var result = mc.getTransactionReceipt(hash);
+      		var contractAddress = result.contractAddress;
+      		getMatchContract(contractAddress);
+      	}
+      });
+    }
+  }
+}
+
+
+function fullTest() {
+	var toShaRatio = 1000000000000000000;
+	account1 = mc.accounts[0];
+	account2 = mc.accounts[1];
+	account3 = mc.accounts[2];
+	account4 = mc.accounts[3];
+
+	personal.unlockAccount(account1, "test123", 0);
+	personal.unlockAccount(account2, "test123", 0);
+	personal.unlockAccount(account3, "test123", 0);
+	personal.unlockAccount(account4, "test123", 0);
+
+	var b1=mc.getBalance(account1)/toShaRatio;
+	var b2=mc.getBalance(account2)/toShaRatio;
+	var b3=mc.getBalance(account3)/toShaRatio;
+	var b4=mc.getBalance(account4)/toShaRatio;
+
+	console.log("[1] initial balances");
+	console.log(account1, "account1", b1);
+	console.log(account2, "account2", b2);
+	console.log(account3, "account3", b3);
+	console.log(account4, "account4", b4);
+
+	if (b2 < 220) {
+		sendtx(account1, account2, 220-b2, "");
+	}
+	if (b3 < 200) {
+		sendtx(account1, account3, 200-b3, "");
+	}
+	if (b4 < 600) {
+		sendtx(account1, account4, 600-b4, "");
+	}
+	admin.sleepBlocks(1);
+
+	console.log("[2] send some tokens");
+	console.log(account1, "account1", b1);
+	console.log(account2, "account2", b2);
+	console.log(account3, "account3", b3);
+	console.log(account4, "account4", b4);
+
+	loadContracts();
+	createWorldcupFunContract(account2);
+	admin.sleepBlocks(2);
+
+	console.log("[3] create wc contract");
+	b2 = mc.getBalance(account2)/toShaRatio;
+	console.log(account2, "account2", b2);
+}
 

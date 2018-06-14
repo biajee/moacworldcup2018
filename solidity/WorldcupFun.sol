@@ -6,6 +6,9 @@ contract WorldcupFun {
 
     address public founder;
 
+    bool public haltFlag;
+
+
     uint256 public toShaRatio = 1000000000000000000;
     uint256 public tokenRatio = 10000;
     string  public tokenSymbol = "WCT";
@@ -19,6 +22,8 @@ contract WorldcupFun {
 
     uint256 public contributionLowerBound = 10000 * toShaRatio;
     uint256 public contributionUpperBound = 1000000 * toShaRatio;
+
+    uint256 public gTotalContribution = totalBonus;
 
     struct Match {
         uint256 matchNumber;
@@ -70,6 +75,12 @@ contract WorldcupFun {
 
     constructor() public {
         founder = msg.sender;
+        haltFlag = false;
+    }
+
+    function SetHalt(bool halt) public {
+        if (msg.sender != founder) revert();
+        haltFlag = halt;
     }
 
     function SetFounder(address newFounder) public returns (bool) {
@@ -78,7 +89,7 @@ contract WorldcupFun {
         return true;
     }
 
-    function AddContributor(address contributor) public {
+    function AddContributor(address contributor) {
         if (allContributorsMap[contributor]==0) {
             allContributors.push(contributor);
         }
@@ -117,62 +128,61 @@ contract WorldcupFun {
     }
 
     function ChampionBet(address sender, uint256 teamNumber) public payable returns (bool) {
+        if (haltFlag) revert();
         if (teams[teamNumber].teamNumber == 0) revert();
         if (msg.value < contributionLowerBound / tokenRatio) revert();
         if (msg.value > contributionUpperBound / tokenRatio) revert();
-        if (matches[57].startTime < now + 600) revert(); //before the first game of final 8
+        if (matches[61].startTime < now) revert(); //before the first game of final 8
 
+        uint256 totalContribution = 0;
         if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
             contributorsAccountBonus[sender] = unitAccountBonus;
             accountBonusLimit -= unitAccountBonus;
-            championJackpot += unitAccountBonus;
-            teams[teamNumber].totalContributions += unitAccountBonus;
-            teamsContributions[sender][teamNumber] += unitAccountBonus;
+            totalContribution += unitAccountBonus;
         }
         if (earlyBonusLimit >= unitEarlyBonus && contributorsEarlyBonus[sender] == 0) {
             contributorsEarlyBonus[sender] = unitEarlyBonus;
             earlyBonusLimit -= unitEarlyBonus;
-            championJackpot += contributorsEarlyBonus[sender];
-            teams[teamNumber].totalContributions += contributorsEarlyBonus[sender];
-            teamsContributions[sender][teamNumber] += contributorsEarlyBonus[sender];
+            totalContribution += unitEarlyBonus;
         }
 
-        championJackpot += msg.value * tokenRatio;
-        teams[teamNumber].totalContributions += msg.value * tokenRatio;
-        teamsContributions[sender][teamNumber] += msg.value * tokenRatio;
+        gTotalContribution += msg.value * tokenRatio;
+
+        totalContribution += msg.value * tokenRatio;
+        championJackpot += totalContribution;
+        teams[teamNumber].totalContributions += totalContribution;
+        teamsContributions[sender][teamNumber] += totalContribution;
         AddContributor(sender);
         return true;
     }
 
     function SingleMatchBet(address sender, uint256 matchNumber, uint256 result) public payable returns (bool) {
+        if (haltFlag) revert();
         if (msg.value < contributionLowerBound / tokenRatio) revert();
         if (msg.value > contributionUpperBound / tokenRatio) revert();
-        if (matches[matchNumber].startTime < now + 600) revert();
+        if (matches[matchNumber].startTime < now) revert();
 
         uint256 totalContribution = 0;
         if (result < 3 && result >= 0) {
             if (accountBonusLimit >= unitAccountBonus && contributorsAccountBonus[sender] == 0) {
                 contributorsAccountBonus[sender] = unitAccountBonus;
                 accountBonusLimit -= unitAccountBonus;
-                matches[matchNumber].jackpot += unitAccountBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitAccountBonus;
                 totalContribution += unitAccountBonus;
             }
             if (earlyBonusLimit >= unitEarlyBonus && contributorsEarlyBonus[sender] == 0) {
                 contributorsEarlyBonus[sender] = unitEarlyBonus;
                 earlyBonusLimit -= unitEarlyBonus;
-                matches[matchNumber].jackpot += unitEarlyBonus;
-                matchesContributions[sender][result + 3 * matchNumber] += unitEarlyBonus;
                 totalContribution += unitEarlyBonus;
             }
 
-            matchesContributions[sender][result + 3 * matchNumber] += msg.value * tokenRatio;
             totalContribution += msg.value * tokenRatio;
+            gTotalContribution += msg.value * tokenRatio;
             AddContributor(sender);
         } else {
             revert();
         }
 
+        matchesContributions[sender][result + 3 * matchNumber] += totalContribution;
         if (result == 0) {
             //away wins
             matches[matchNumber].totalAwayWinContributions += totalContribution;
@@ -200,7 +210,7 @@ contract WorldcupFun {
         if (!matches[matchNumber].finished) revert();
         if (matches[matchNumber].rewardSent) revert();
 
-        uint256 distJackpot = matches[matchNumber].jackpot * 99 / 100;
+        uint256 distJackpot = matches[matchNumber].jackpot;
 
         uint256 contributorsLength = allContributors.length;
         uint256 i = 0;
@@ -257,7 +267,7 @@ contract WorldcupFun {
         if (championRewardSent) revert();
         if (championNumber == 0) revert();
 
-        uint256 distJackpot = championJackpot * 99 / 100;
+        uint256 distJackpot = championJackpot;
 
         uint256 contributorsLength = allContributors.length;
         if (teams[championNumber].totalContributions == 0) revert();
@@ -280,7 +290,7 @@ contract WorldcupFun {
         championRewardSent = true;
     }
 
-    function AddWinAmount(uint256 amount, address winner) public {
+    function AddWinAmount(uint256 amount, address winner) {
         if (allWinnersMap[winner]==0) {
             allWinners.push(winner);
         }
@@ -318,6 +328,12 @@ contract WorldcupFun {
 
         }
 
+    }
+
+    function ManualTransfer(uint256 amount, address to) public {
+        if (msg.sender != founder) revert();
+
+        to.transfer(amount);
     }
 
     function SafetySendout(uint256 amount) public {
