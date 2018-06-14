@@ -197,13 +197,13 @@ function createChampionContract(teamNumber, teamName) {
 	     from: mc.coinbase, 
 	     data: championData, 
 	     gas: '4700000'
-	   }, function (e, contract){
+	   }, function (e, contract) {
 	    console.log(e, contract);
 	    if (typeof contract.address !== 'undefined') {
 	         console.log(teamNumber, teamName, 'Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
 	         championAddresses[''+teamNumber] = contract.address;
 	    }
-	 })
+	 });
 }
 
 function createMatchContract(matchNumber, result) {
@@ -216,26 +216,26 @@ function createMatchContract(matchNumber, result) {
 	     from: mc.coinbase, 
 	     data: matchData, 
 	     gas: '4700000'
-	   }, function (e, contract){
+	   }, function (e, contract) {
 	    console.log(e, contract);
 	    if (typeof contract.address !== 'undefined') {
 	         console.log(matchNumber, result, 'Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
 	         matchAddresses[''+matchNumber+'x'+result] = contract.address;
 	    }
-	 })
+	 });
 }
 
 function supportTeam(teamNumber, amount) {
 	sendtx(mc.coinbase, championAddresses[''+teamNumber], amount, "", function(e, c) {
 		console.log(e,c);
-	})
+	});
 }
 
 
 function betMatch(matchNumber, result, amount) {
 	sendtx(mc.coinbase, matchAddresses[''+matchNumber +'x'+result], amount, "", function(e, c) {
 		console.log(e,c);
-	})
+	});
 }
 
 function setChampion(teamNumber) {
@@ -269,6 +269,189 @@ function distChampionBet() {
 		}
 	);
 	
+}
+
+function setMatchResult(matchNumber, homeScore, awayScore) {
+	var MyContract = chain3.mc.contract(wcAbi);
+	var contractInstance = MyContract.at(wcAddress);
+
+	contractInstance.FinalizeMatch.sendTransaction(
+		matchNumber, 
+		homeScore,
+		awayScore,
+		{
+			from: mc.coinbase,
+			gas: '5000000'
+		},
+		function (e,c) {
+			console.log(e, c);
+		}
+	);
+	
+}
+
+function distMatchBet(matchNumber) {
+	var MyContract = chain3.mc.contract(wcAbi);
+	var contractInstance = MyContract.at(wcAddress);
+
+	contractInstance.SendoutSingleMatchReward.sendTransaction(
+		matchNumber,
+		{
+			from: mc.coinbase,
+			gas: '5000000'
+		},
+		function (e,c) {
+			console.log(e, c);
+		}
+	);
+	
+}
+
+var teamJson = {};
+function addTeamToJson(teamNumber, teamName) {
+	teamJson[teamNumber+''] = teamName;
+}
+
+function createTeamJson() {
+	addTeamToJson(11, "Russia");
+	addTeamToJson(12, "SaudiArabia");
+	addTeamToJson(13, "Egypt");
+	addTeamToJson(14, "Uruguay");
+	addTeamToJson(21, "Portugal");
+	addTeamToJson(22, "Spain");
+	addTeamToJson(23, "Morocco");
+	addTeamToJson(24, "Iran");
+	addTeamToJson(31, "France");
+	addTeamToJson(32, "Australia");
+	addTeamToJson(33, "Peru");
+	addTeamToJson(34, "Denmark");
+	addTeamToJson(41, "Argentina");
+	addTeamToJson(42, "Iceland");
+	addTeamToJson(43, "Croatia");
+	addTeamToJson(44, "Nigeria");
+	addTeamToJson(51, "Brazil");
+	addTeamToJson(52, "Switzerland");
+	addTeamToJson(53, "CostaRica");
+	addTeamToJson(54, "Serbia");
+	addTeamToJson(61, "Germany");
+	addTeamToJson(62, "Mexico");
+	addTeamToJson(63, "Sweden");
+	addTeamToJson(64, "SouthKorea");
+	addTeamToJson(71, "Belgium");
+	addTeamToJson(72, "Panama");
+	addTeamToJson(73, "Tunisia");
+	addTeamToJson(74, "England");
+	addTeamToJson(81, "Poland");
+	addTeamToJson(82, "Senegal");
+	addTeamToJson(83, "Colombia");
+	addTeamToJson(84, "Japan");
+}
+
+function addAllTeams() {
+
+	for (var i=1; i<5; i++) {
+		for (var j=1; j<9; j++) {
+			var teamNumber = j*10+i;
+			addTeam(teamNumber, teamJson[teamNumber+'']);
+		}
+		admin.sleepBlocks(2);
+	}
+}
+
+function addAllMatches() {
+	addMatch(1, 11, 12, 1528988400000);
+	addMatch(2, 13, 14, 1529064000000);
+	addMatch(3, 23, 24, 1529074800000);
+	addMatch(4, 21, 22, 1529085600000);
+	addMatch(5, 31, 32, 1529143200000);
+	addMatch(6, 41, 42, 1529154000000);
+	addMatch(7, 33, 34, 1529164800000);
+	addMatch(8, 43, 44, 1529175600000);
+	addMatch(9, 53, 54, 1529236800000);
+	addMatch(10, 61, 62, 1529247600000);
+	addMatch(11, 51, 52, 1529258400000);
+	addMatch(12, 63, 64, 1529323200000);
+	addMatch(13, 71, 72, 1529334000000);
+	addMatch(14, 73, 74, 1529344800000);
+	addMatch(15, 83, 84, 1529409600000);
+	addMatch(16, 81, 82, 1529420400000);
+	admin.sleepBlocks(2);
+	addMatch(17, 11, 13, 1529431200000);
+	addMatch(18, 21, 23, 1529496000000);
+	addMatch(19, 14, 12, 1529506800000);
+	addMatch(20, 24, 22, 1529517600000);
+	addMatch(21, 34, 32, 1529582400000);
+	addMatch(22, 31, 33, 1529593200000);
+	addMatch(23, 41, 43, 1529604000000);
+	addMatch(24, 51, 53, 1529668800000);
+	addMatch(25, 44, 42, 1529679600000);
+	addMatch(26, 54, 52, 1529690400000);
+	addMatch(27, 71, 73, 1529755200000);
+	addMatch(28, 64, 62, 1529766000000);
+	addMatch(29, 61, 63, 1529776800000);
+	addMatch(30, 74, 72, 1529841600000);
+	addMatch(31, 84, 82, 1529852400000);
+	addMatch(32, 81, 83, 1529863200000);
+	admin.sleepBlocks(2);
+	addMatch(33, 14, 11, 1529935200000);
+	addMatch(34, 12, 13, 1529935200000);
+	addMatch(35, 22, 23, 1529949600000);
+	addMatch(36, 24, 21, 1529949600000);
+	addMatch(37, 32, 33, 1530021600000);
+	addMatch(38, 34, 31, 1530021600000);
+	addMatch(39, 44, 41, 1530036000000);
+	addMatch(40, 42, 43, 1530036000000);
+	addMatch(41, 64, 61, 1530108000000);
+	addMatch(42, 62, 63, 1530108000000);
+	addMatch(43, 54, 51, 1530122400000);
+	addMatch(44, 52, 53, 1530122400000);
+	addMatch(45, 84, 81, 1530194400000);
+	addMatch(46, 82, 83, 1530194400000);
+	addMatch(47, 72, 73, 1530208800000);
+	addMatch(48, 74, 71, 1530208800000);
+	admin.sleepBlocks(2);
+	addMatch(49, 0, 0, 1530367200000);
+	addMatch(50, 0, 0, 1530381600000);
+	addMatch(51, 0, 0, 1530453600000);
+	addMatch(52, 0, 0, 1530468000000);
+	addMatch(53, 0, 0, 1530540000000);
+	addMatch(54, 0, 0, 1530554400000);
+	addMatch(55, 0, 0, 1530626400000);
+	addMatch(56, 0, 0, 1530640800000);
+	addMatch(57, 0, 0, 1530885600000);
+	addMatch(58, 0, 0, 1530900000000);
+	addMatch(59, 0, 0, 1530972000000);
+	addMatch(60, 0, 0, 1530986400000);
+	addMatch(61, 0, 0, 1531245600000);
+	addMatch(62, 0, 0, 1531332000000);
+	addMatch(63, 0, 0, 1531576800000);
+	addMatch(64, 0, 0, 1531666800000);
+	admin.sleepBlocks(2);
+}
+
+function createAllMatchBets() {
+	for (var i=1; i<49; i++) {
+		createMatchContract(i, 0);
+		createMatchContract(i, 1);
+		createMatchContract(i, 2);
+		admin.sleepBlocks(2);
+	}
+	for (var j=49; j<65; j++) {
+		createMatchContract(j, 0);
+		createMatchContract(j, 2);
+		admin.sleepBlocks(2);
+	}
+}
+
+
+function createAllChampionBets() {
+	for (var i=1; i<5; i++) {
+		for (var j=1; j<9; j++) {
+			var teamNumber = j*10+i;
+			createChampionContract(teamNumber, teamJson[teamNumber+'']);
+		}
+		admin.sleepBlocks(2);
+	}
 }
 
 function getTeamInfo(teamNumber) {
